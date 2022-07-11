@@ -115,13 +115,13 @@ etc.
             $payload .= <<<EOT
     --$batchID
     Content-Type: application/http
-    Content-Transfer-Encoding:binary
-    Content-ID:$i
+    Content-Transfer-Encoding: binary
+    Content-ID: $i
 
     PATCH https://YOUT_CRM_INSTANCE.crm.dynamics.com/api/data/v9.1/contacts($customerID) HTTP/1.1
     Content-Type: application/json;type=entry
 
-    {"ftpsiteurl":"ftp://..."}
+    {"ftpsiteurl": "ftp://..."}
 
     EOT;
             ++$i;
