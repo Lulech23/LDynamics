@@ -1,6 +1,3 @@
 <?php
 
-include 'LDynamics.php';
-
-
-
+include 'Dynamics.php';
