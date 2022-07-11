@@ -26,7 +26,11 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 
     $contactsResponse = $LDynamics->contacts->select('00000000-0000-0000-0000-000000000000');
 
-OR
+or
+
+    $contactsResponse = $LDynamics->contacts->select('(00000000-0000-0000-0000-000000000000)?$select=fullname');
+    
+or
 
     $contactsResponse = $LDynamics->contacts->select('?$select=fullname');
     if($contactsResponse->isSuccess()) {
@@ -35,6 +39,8 @@ OR
     else {
         // $contactsResponse->getErrorMessage(); - Return CRM Web API error message as string
     }
+    
+etc.
 
 ### Querying Contacts with Paging
 (For >5000 results)
