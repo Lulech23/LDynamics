@@ -1,23 +1,34 @@
-# RDynamics
+# LDynamics
 Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 
-Initializing:
+> *Based on RDynamics by RobbeR*
 
-    $RDynamics = new RDynamics(array(
-        "base_url"              => "https://YOUR_CRM_INSTANCE.crm4.dynamics.com",
-        "authEndPoint"          => "https://login.windows.net/common/oauth2/authorize",
-        'tokenEndPoint'         => 'https://login.windows.net/common/oauth2/token',
-        'crmApiEndPoint'        => 'https://YOUR_CRM_INSTANCE.api.crm4.dynamics.com/',
-        "clientID"              => "***", 
-        "clientSecret"          => "***", 
-        'user'                  => '***',
-        'pass'                  => '*'
+## What's New
+* Updated to support OAuth 2.0
+* Updated to support CRM API 9.1
+* Unified `select` syntax with other operations
+* Code and syntax cleanup
+
+## Usage Examples
+### Initializing
+**Note:** See your [Azure Admin Portal](https://aad.portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps) for tenant ID. Create a new app registration for client credentials.
+
+    $LDynamics = new LDynamics(array(
+        'base_url'              => 'https://YOUR_CRM_INSTANCE.crm.dynamics.com',
+        'authEndPoint'          => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/authorize',
+        'tokenEndPoint'         => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/token',
+        'crmApiEndPoint'        => 'https://YOUR_CRM_INSTANCE.api.crm.dynamics.com/',
+        'clientID'              => '***', 
+        'clientSecret'          => '***'
     ));
 
+### Querying Contacts
 
-Querying contacts:
+    $contactsResponse = $LDynamics->contacts->select('00000000-0000-0000-0000-000000000000');
 
-    $contactsResponse = $RDynamics->contacts->select('?$select=fullname');
+
+
+    $contactsResponse = $LDynamics->contacts->select('?$select=fullname');
     if($contactsResponse->isSuccess()) {
         // $contactsResponse->getData(); - Return data as array
     }
@@ -25,7 +36,8 @@ Querying contacts:
         // $contactsResponse->getErrorMessage(); - Return CRM Web API error message as string
     }
 
-Querying contacts (when the number of contacts is more then 5000, you need paging):
+### Querying Contacts with Paging
+(For >5000 results)
 
     $i = 1;
     do {
@@ -39,7 +51,7 @@ Querying contacts (when the number of contacts is more then 5000, you need pagin
             $endpoint = '?$select=gendercode,fullname';
         }
 
-        $contactsResponse = $RDynamics->contacts->select($endpoint);
+        $contactsResponse = $LDynamics->contacts->select($endpoint);
         if($contactsResponse->isSuccess()) {
             // $contactsResponse->getData(); - as array
             ++$i;
@@ -49,9 +61,9 @@ Querying contacts (when the number of contacts is more then 5000, you need pagin
         }
     } while($contactsResponse->getNextLink());
 
-Inserting contact:
+### Inserting Contacts
 
-    $contactsResponse = $RDynamics->contacts->insert(array(
+    $contactsResponse = $LDynamics->contacts->insert(array(
         "emailaddress1"     => "some_test_email"
     ));
 
@@ -62,9 +74,9 @@ Inserting contact:
         // $contactsResponse->getErrorMessage(); - Get the error message as string
     }
 
-Updating contact
+### Updating Contacts
 
-    $contactsResponse = $RDynamics->contacts->update('00000000-0000-0000-0000-000000000000', array(
+    $contactsResponse = $LDynamics->contacts->update('00000000-0000-0000-0000-000000000000', array(
         "emailaddress1"     => "some_test_email"
     ));
 
@@ -76,9 +88,9 @@ Updating contact
         // $contactsResponse->getErrorMessage(); - Get the error message as string
     }
 
-Deleting contact:
+### Deleting Contacts
 
-    $contactsResponse = $RDynamics->contacts->delete('00000000-0000-0000-0000-000000000000');
+    $contactsResponse = $LDynamics->contacts->delete('00000000-0000-0000-0000-000000000000');
     if($contactsResponse->isSuccess()) {
         // $contactsResponse->getData(); - Get the response data
         // $contactsResponse->getHeaders(); - Get the response headers
@@ -87,9 +99,10 @@ Deleting contact:
         // $contactsResponse->getErrorMessage(); - Get the error message as string
     }
 
-Running batch methods (max. 1000 request per batch):
+### Running Batch Methods 
+(max. 1000 requests per batch)
 
-    $contactsResponse = $RDynamics->contacts->select('?$top=10');
+    $contactsResponse = $LDynamics->contacts->select('?$top=10');
     if($contactsResponse->isSuccess()) {
         $customers = $contactsResponse->getData();
         $batchID = "batch_" . uniqid();
@@ -104,7 +117,7 @@ Running batch methods (max. 1000 request per batch):
     Content-Transfer-Encoding:binary
     Content-ID:$i
 
-    PATCH https://YOUT_CRM_INSTANCE.crm4.dynamics.com/api/data/v8.1/contacts($customerID) HTTP/1.1
+    PATCH https://YOUT_CRM_INSTANCE.crm.dynamics.com/api/data/v9.1/contacts($customerID) HTTP/1.1
     Content-Type: application/json;type=entry
 
     {"ftpsiteurl":"ftp://..."}
@@ -113,7 +126,7 @@ Running batch methods (max. 1000 request per batch):
             ++$i;
         }
         $payload .= "--" . $batchID . "--\n\n";
-        $batchResponse = $RDynamics->performBatchRequest($payload, $batchID);
+        $batchResponse = $LDynamics->performBatchRequest($payload, $batchID);
 
         // $contactsResponse->getData(); - Get the response data
         // $contactsResponse->getHeaders(); - Get the response headers
