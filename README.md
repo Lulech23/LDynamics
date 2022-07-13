@@ -9,35 +9,46 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 * Unified `select` syntax with other operations
 * Code and syntax cleanup
 
-## Usage Examples
-### Initializing
-**Note:** See your [Azure Admin Portal](https://aad.portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps) for tenant ID. Create a new app registration for client credentials.
+## Prerequisites
+* Using PHP-D365 requires an **Azure Application** client ID and secret. Applications and endpoints needed for configuration can be found in your [Azure Admin Portal](https://aad.portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps).
+* An **Application User** must exist in your Dynamics 365 environment to grant security roles to connected applications. Application Users can be configured in your [PowerApps Admin Portal](https://docs.microsoft.com/en-us/power-platform/admin/manage-application-users).
 
-    $CRM = new Dynamics(array(
+## Setup
+* Place `Dynamics.php` anywhere on your server, and [`include` or `require`](https://www.w3schools.com/php/php_includes.asp)) the file where you want to make Dynamics API calls.
+* Initialize your Dynamics 365 Configuration:
+    <pre>$Dynamics = new Dynamics(array(
         'base_url'              => 'https://YOUR_CRM_INSTANCE.crm.dynamics.com',
         'authEndPoint'          => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/authorize',
         'tokenEndPoint'         => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/token',
         'crmApiEndPoint'        => 'https://YOUR_CRM_INSTANCE.api.crm.dynamics.com/',
         'clientID'              => '***', 
         'clientSecret'          => '***'
-    ));
+    ));</pre>
+* Call `$Dynamics->YOUR_CRM_ENTITY->operation(...)`, where 'operation' can be `select`, `insert`, `update`, or `delete`. Response will contain multiple objects, including the requested data, metadata about the API call, and methods to handle them.
+* Handle response with is\* and get\* methods included in the response object: 
+    * Use `isSuccess()` and `isFail()` to test whether the API call succeeded.
+    * Use `getData()`, `getHeaders()`, or `getErrorMessage()` to retrieve primary information about the response, where `getData()` will contain the queried object in a `select` operation.
+        * If `getData()` exceeds the row limit set by Dynamics (default 5000), use `getNextLink()` to retrieve the API endpoint for calling the next page of rows.
+    * Use `getRawResponse()`, `getEndpoint()`, `getError()`, and `getGuidCreated()` to retrieve additional information about the response (see examples below).
+
+## Usage Examples
 
 ### Querying Contacts
 
-    $contactsResponse = $CRM->contacts->select('00000000-0000-0000-0000-000000000000');
+    $contactsResponse = $Dynamics->contacts->select('00000000-0000-0000-0000-000000000000');
 
 or
 
-    $contactsResponse = $CRM->contacts->select('(00000000-0000-0000-0000-000000000000)?$select=fullname');
+    $contactsResponse = $Dynamics->contacts->select('(00000000-0000-0000-0000-000000000000)?$select=fullname');
     
 or
 
-    $contactsResponse = $CRM->contacts->select('?$select=fullname');
+    $contactsResponse = $Dynamics->contacts->select('?$select=fullname');
     if($contactsResponse->isSuccess()) {
         // $contactsResponse->getData(); - Return data as array
     }
     else {
-        // $contactsResponse->getErrorMessage(); - Return CRM Web API error message as string
+        // $contactsResponse->getErrorMessage(); - Return Dynamics Web API error message as string
     }
     
 etc.
@@ -56,7 +67,7 @@ etc.
             $endpoint = '?$select=gendercode,fullname';
         }
 
-        $contactsResponse = $CRM->contacts->select($endpoint);
+        $contactsResponse = $Dynamics->contacts->select($endpoint);
         if ($contactsResponse->isSuccess()) {
             // $contactsResponse->getData(); - as array
             ++$i;
@@ -67,7 +78,7 @@ etc.
 
 ### Inserting Contacts
 
-    $contactsResponse = $CRM->contacts->insert(array(
+    $contactsResponse = $Dynamics->contacts->insert(array(
         "emailaddress1"     => "some_test_email"
     ));
 
@@ -79,7 +90,7 @@ etc.
 
 ### Updating Contacts
 
-    $contactsResponse = $CRM->contacts->update('00000000-0000-0000-0000-000000000000', array(
+    $contactsResponse = $Dynamics->contacts->update('00000000-0000-0000-0000-000000000000', array(
         "emailaddress1" => "some_test_email"
     ));
 
@@ -92,7 +103,7 @@ etc.
 
 ### Deleting Contacts
 
-    $contactsResponse = $CRM->contacts->delete('00000000-0000-0000-0000-000000000000');
+    $contactsResponse = $Dynamics->contacts->delete('00000000-0000-0000-0000-000000000000');
     if ($contactsResponse->isSuccess()) {
         // $contactsResponse->getData(); - Get the response data
         // $contactsResponse->getHeaders(); - Get the response headers
@@ -103,7 +114,7 @@ etc.
 ### Running Batch Methods 
 (max. 1000 requests per batch)
 
-    $contactsResponse = $CRM->contacts->select('?$top=10');
+    $contactsResponse = $Dynamics->contacts->select('?$top=10');
     if ($contactsResponse->isSuccess()) {
         $customers = $contactsResponse->getData();
         $batchID = "batch_" . uniqid();
@@ -127,10 +138,10 @@ etc.
             ++$i;
         }
         $payload .= "--" . $batchID . "--\n\n";
-        $batchResponse = $CRM->performBatchRequest($payload, $batchID);
+        $batchResponse = $Dynamics->performBatchRequest($payload, $batchID);
 
         // $contactsResponse->getData(); - Get the response data
         // $contactsResponse->getHeaders(); - Get the response headers
     } else {
-        // $contactsResponse->getErrorMessage(); - Get the error message as string
+        // $contactsResponse->cccccccccccccccc(); - Get the error message as string
     }
