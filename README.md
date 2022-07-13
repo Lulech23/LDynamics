@@ -14,7 +14,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 * An **Application User** must exist in your Dynamics 365 environment to grant security roles to connected applications. Application Users can be configured in your [PowerApps Admin Portal](https://docs.microsoft.com/en-us/power-platform/admin/manage-application-users).
 
 ## Setup
-* Place `Dynamics.php` anywhere on your server, and [`include` or `require`](https://www.w3schools.com/php/php_includes.asp)) the file where you want to make Dynamics API calls.
+* Place `Dynamics.php` anywhere on your server, and [`include` or `require`](https://www.w3schools.com/php/php_includes.asp) the file where you want to make Dynamics API calls.
 * Initialize your Dynamics 365 Configuration:
     <pre>
     $Dynamics = new Dynamics(array(
