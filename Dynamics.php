@@ -199,12 +199,11 @@ class DynamicsResponse {
 class DynamicsWorker {
     private $entity = null;
     private $config = false;
-    private $apiVersion = '9.1';
 
     private function fetchToken() {
         $params = array(
             'grant_type'    => 'client_credentials',
-            'scope'         => $this->config["base_url"] . '/.default',
+            'scope'         => $this->config["baseUrl"] . '/.default',
             'client_id'     => $this->config["clientID"],
             'client_secret' => $this->config["clientSecret"],
         );
@@ -255,6 +254,10 @@ class DynamicsWorker {
     */
 
     private function performRequest($endpoint, $method, $payload = false, $customHeaders, $originMethod) {
+        if (!$this->config["api"]) {
+            $this->config["api"] = "9.0";
+        }
+
         try {
             $endpoint = str_replace(" ", "%20", $endpoint);
             $endpoint = str_replace("''", "%27", $endpoint);
@@ -264,7 +267,7 @@ class DynamicsWorker {
                     $endpoint = '/' . $endpoint;
                 }
 
-                $request = $this->config["crmApiEndPoint"] . "api/data/v". $this->apiVersion . $endpoint;
+                $request = $this->config["crmApiEndPoint"] . "api/data/v". $this->config["api"] . $endpoint;
             } else {
                 $request = $endpoint;
             }
@@ -414,7 +417,8 @@ class DynamicsWorker {
 
 class Dynamics {
     private $config = array(
-        'base_url'          => '',
+        'api'               => '',
+        'baseUrl'           => '',
         'authEndPoint'      => '',
         'tokenEndPoint'     => '',
         'crmApiEndPoint'    => '',

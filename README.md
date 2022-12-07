@@ -5,7 +5,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 
 ## What's New
 * Updated to support OAuth 2.0
-* Updated to support CRM API 9.1
+* Updated to support CRM API 9.x
 * Unified `select` syntax with other operations
 * Added `execute` operation for API functions
 * Code and syntax cleanup
@@ -19,7 +19,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 * Initialize your Dynamics 365 Configuration:
     <pre>
     $Dynamics = new Dynamics(array(
-        'base_url'              => 'https://YOUR_CRM_INSTANCE.crm.dynamics.com',
+        'baseUrl'               => 'https://YOUR_CRM_INSTANCE.crm.dynamics.com',
         'authEndPoint'          => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/authorize',
         'tokenEndPoint'         => 'https://login.microsoftonline.com/YOUR_AZURE_TENANT_GUID/oauth2/v2.0/token',
         'crmApiEndPoint'        => 'https://YOUR_CRM_INSTANCE.api.crm.dynamics.com/',
@@ -27,6 +27,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
         'clientSecret'          => '***'
     ));
     </pre>
+    * Optional: Include `'api' => 'YOUR_CRM_API_VERSION'` to specify the exact web API revision to use. `'9.0'` will be used by default.
 * Call `$Dynamics->YOUR_CRM_ENTITY->operation(...)`, where 'operation' can be `select`, `insert`, `update`, `delete`, or `execute`. Response will contain multiple objects, including the requested data, metadata about the API call, and methods to handle them.
 * Handle response with is\* and get\* methods included in the response object: 
     * Use `isSuccess()` and `isFail()` to test whether the API call succeeded.
