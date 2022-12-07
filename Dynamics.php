@@ -127,6 +127,10 @@ class DynamicsResponse {
             return $this->data;
         }
 
+        if ($this->originMethod == "execute") {
+            return $this->data;
+        }
+
         if (($this->originMethod == "select") && preg_match('/\([a-zA-Z0-9\-]{36}\)$/', $this->endpoint)) {
             return $this->data;
         }
@@ -247,7 +251,7 @@ class DynamicsWorker {
     * @param $method - The method of the request. Could be 'POST', 'PATCH', 'GET', 'DELETE'
     * @param $payload - On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
     * @param $customHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
-    * @param $originMethod - Could be 'insert', 'update', 'delete', 'select' 
+    * @param $originMethod - Could be 'insert', 'update', 'delete', 'select', 'execute'
     */
 
     private function performRequest($endpoint, $method, $payload = false, $customHeaders, $originMethod) {
@@ -385,6 +389,24 @@ class DynamicsWorker {
         return $this->performRequest('/' . $this->entity . '(' . $GUID . ')', 'DELETE', false, $extraHeaders, "delete");
     }
 
+    /*
+    * Executing functions
+    *
+    * @param $endpoint - The API endpoint without the API URL
+    * @param $extraHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
+    */
+
+    public function execute($endpoint = '', $extraHeaders = false) {
+        if (!preg_match('/^http(s)?\:\/\//', $endpoint)) {
+            if (strpos($endpoint, '(') !== false) {
+                $endpoint = '/' . $this->entity . $endpoint;
+            } else {
+                $endpoint = '/' . $this->entity . '(' . $endpoint . ')';
+            }
+        }
+        
+        return $this->performRequest($endpoint, 'GET', false, $extraHeaders, "execute");
+    }
 }
 
 

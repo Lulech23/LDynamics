@@ -7,6 +7,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 * Updated to support OAuth 2.0
 * Updated to support CRM API 9.1
 * Unified `select` syntax with other operations
+* Added `execute` operation for API functions
 * Code and syntax cleanup
 
 ## Prerequisites
@@ -26,10 +27,10 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
         'clientSecret'          => '***'
     ));
     </pre>
-* Call `$Dynamics->YOUR_CRM_ENTITY->operation(...)`, where 'operation' can be `select`, `insert`, `update`, or `delete`. Response will contain multiple objects, including the requested data, metadata about the API call, and methods to handle them.
+* Call `$Dynamics->YOUR_CRM_ENTITY->operation(...)`, where 'operation' can be `select`, `insert`, `update`, `delete`, or `execute`. Response will contain multiple objects, including the requested data, metadata about the API call, and methods to handle them.
 * Handle response with is\* and get\* methods included in the response object: 
     * Use `isSuccess()` and `isFail()` to test whether the API call succeeded.
-    * Use `getData()`, `getHeaders()`, or `getErrorMessage()` to retrieve primary information about the response, where `getData()` will contain the queried object in a `select` operation.
+    * Use `getData()`, `getHeaders()`, or `getErrorMessage()` to retrieve primary information about the response, where `getData()` will contain the queried object in a `select` operation or the returned value in an `execute` operation.
         * If `getData()` exceeds the row limit set by Dynamics (default 5000), use `getNextLink()` to retrieve the API endpoint for calling the next page of rows.
     * Use `getRawResponse()`, `getEndpoint()`, `getError()`, and `getGuidCreated()` to retrieve additional information about the response (see examples below).
 
@@ -145,5 +146,10 @@ etc.
         // $contactsResponse->getData(); - Get the response data
         // $contactsResponse->getHeaders(); - Get the response headers
     } else {
-        // $contactsResponse->cccccccccccccccc(); - Get the error message as string
+        // $contactsResponse->getErrorMessage(); - Get the error message as string
     }
+
+### Executing Functions
+(See [Microsoft Dataverse Web API Documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/reference/functions?view=dataverse-latest))
+
+    $functionResponse = $Dynamics->RetrieveTotalRecordCount->execute("EntityNames=['contact']");
