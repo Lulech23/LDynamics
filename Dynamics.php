@@ -131,7 +131,7 @@ class DynamicsResponse {
             return $this->data;
         }
 
-        if (($this->originMethod == "select") && preg_match('/\([a-zA-Z0-9\-]{36}\)$/', $this->endpoint)) {
+        if (($this->originMethod == "select") && preg_match('/\([a-zA-Z0-9\-]{36}\)(?=\?|$)/', $this->endpoint)) {
             return $this->data;
         }
 
