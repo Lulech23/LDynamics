@@ -253,7 +253,7 @@ class DynamicsWorker {
     * @param $originMethod - Could be 'insert', 'update', 'delete', 'select', 'execute'
     */
 
-    private function performRequest($endpoint, $method, $payload = false, $customHeaders, $originMethod) {
+    private function performRequest($endpoint, $method, $payload, $customHeaders, $originMethod) {
         if (!$this->config["api"]) {
             $this->config["api"] = "9.0";
         }
@@ -308,7 +308,7 @@ class DynamicsWorker {
             curl_setopt($curl, CURLOPT_VERBOSE, 1);
             curl_setopt($curl, CURLOPT_HEADER, 1);
             
-            if ($payload && in_array($originMethod, array('insert', 'update', 'batch'))) { // In case of insert and update methods
+            if ((!empty($payload)) && in_array($originMethod, array('insert', 'update', 'batch'))) { // In case of insert and update methods
                 if (is_array($payload)) {
                     $payload = json_encode($payload);
                 }
