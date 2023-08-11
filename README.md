@@ -6,6 +6,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 ## What's New
 * Updated to support OAuth 2.0
 * Updated to support CRM API 9.x
+* Updated to include annotations in responses
 * Unified `select` syntax with other operations
 * Added `execute` operation for API functions
 * Code and syntax cleanup
@@ -116,7 +117,7 @@ etc.
     }
 
 ### Running Batch Methods 
-(max. 1000 requests per batch)
+(Max. 1000 requests per batch. See [Microsoft Dataverse Web API Documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/execute-batch-operations-using-web-api))) 
 
     $contactsResponse = $Dynamics->contacts->select('?$top=10');
     if ($contactsResponse->isSuccess()) {
@@ -133,7 +134,7 @@ etc.
     Content-Transfer-Encoding: binary
     Content-ID: $i
 
-    PATCH https://YOUT_CRM_INSTANCE.crm.dynamics.com/api/data/v9.1/contacts($customerID) HTTP/1.1
+    PATCH https://YOUR_CRM_INSTANCE.crm.dynamics.com/api/data/v9.1/contacts($customerID) HTTP/1.1
     Content-Type: application/json;type=entry
 
     {"ftpsiteurl": "ftp://..."}
