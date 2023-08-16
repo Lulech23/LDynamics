@@ -33,6 +33,7 @@ Dynamics 365 Online CRM Web API - Lightweight PHP Connector
 * Handle response with is\* and get\* methods included in the response object: 
     * Use `isSuccess()` and `isFail()` to test whether the API call succeeded.
     * Use `getData()`, `getHeaders()`, or `getErrorMessage()` to retrieve primary information about the response, where `getData()` will contain the queried object in a `select` operation or the returned value in an `execute` operation.
+        * Use `getData(true)` to enable formatting the result according to the `EntityMetadata` schema in the [Microsoft XRM SDK](https://learn.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.metadata.entitymetadata?view=dataverse-sdk-latest)
         * If `getData()` exceeds the row limit set by Dynamics (default 5000), use `getNextLink()` to retrieve the API endpoint for calling the next page of rows.
     * Use `getRawResponse()`, `getEndpoint()`, `getError()`, and `getGuidCreated()` to retrieve additional information about the response (see examples below).
 
