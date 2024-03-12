@@ -631,6 +631,29 @@ class DynamicsFormat {
     }
 
 
+    /**
+     * Performs private format_attribute function recursively
+     * 
+     * @param $array     The associative array to format, including annotations
+     * 
+     * @return array
+     */
+    
+    private function format_attribute_recursive($array) {
+        $formatted_array = array();
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                // If $value is an array, recursively format it
+                $formatted_array[$key] = $this->format_attribute_recursive($value);
+            } else {
+                // If $value is not an array, format it as usual
+                $formatted_array = array_merge_recursive($formatted_array, $this->format_attribute($key, $value));
+            }
+        }
+        return $formatted_array;
+    }
+
+
     /* FORMATS */
 
     /**
@@ -668,7 +691,7 @@ class DynamicsFormat {
             return $data;
         }
 
-        // Format multiple (e.g. FetchXML)
+        // Format multiple (e.g. OData filter, FetchXML)
         if (isset($data['value']) && is_array($data['value'])) {
             foreach ($data['value'] as $r => $result) {
                 $formatted_data = array();
@@ -684,15 +707,7 @@ class DynamicsFormat {
             return $data['value'];
         }
 
-        // Format single
-        $formatted_data = array();
-        foreach ($data as $key => $value) {
-            if (!is_array($value)) {
-                $formatted_data = array_merge_recursive($formatted_data, $this->format_attribute($key, $value));
-            } else {
-                $formatted_data = array_merge_recursive($formatted_data, array("$key" => $value));
-            }
-        }
-        return $formatted_data;
+        // Format single (e.g. OData GUID, OData expand)
+        return $this->format_attribute_recursive($data);
     }
 }
