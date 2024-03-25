@@ -699,7 +699,7 @@ class DynamicsFormat {
                     if (!is_array($value)) {
                         $formatted_data = array_merge_recursive($formatted_data, $this->format_attribute($key, $value));
                     } else {
-                        $formatted_data = array_merge_recursive($formatted_data, array("$key" => $value));
+                        $formatted_data = array_merge_recursive($formatted_data, array("$key" => $this->format_attribute_recursive($value)));
                     }
                 }
                 $data['value'][$r] = $formatted_data;
