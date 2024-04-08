@@ -16,25 +16,33 @@ class Dynamics {
         'clientSecret'      => ""
     ];
 
+    // Initialize inner classes
+    private $DynamicsRequest;
+
     // Initialize class constructor
     public function __construct($config) {
+        // Assign class properties
         $this->config = $config;
 
 
 
         /* 
-        CLASS: WORKER
+        CLASS: REQUEST
         */
     
-        $this->DynamicsWorker = new class($entity = null, $config = false) {
+        $this->DynamicsRequest = new class($entity = null, $config = false) {
             // Initialize class properties
-            private $entity = null;
-            private $config = false;
+            private $entity;
+            private $config;
+
+            // Initialize inner classes
+            private $DynamicsResponse;
         
             // Initialize class constructor
             public function __construct($entity, $config) {
-                $this->config = $config;
+                // Assign class properties
                 $this->entity = $entity;
+                $this->config = $config;
 
     
 
@@ -42,38 +50,31 @@ class Dynamics {
                 CLASS: RESPONSE
                 */
             
-                $this->DynamicsResponse = new class($responseBody = '', $respHeaders = [], $endpoint ='', $originMethod = '', $rawResponse = '') {
+                $this->DynamicsResponse = new class($responseBody = "", $responseHeaders = [], $endpoint = "", $originMethod = "", $rawResponse = "") {
                     // Initialize class properties
-                    private $endpoint = '';
-                    private $rawResponse = '';
-                    private $data = false;
-                    private $responseHeaders = [];
-                    private $originMethod = '';
+                    private $data = [];
+                    private $responseHeaders;
+                    private $endpoint;
+                    private $originMethod;
+                    private $rawResponse;
+
+                    // Initialize inner classes
+                    private $DynamicsFormat;
             
                     // Initialize class constructor
-                    public function __construct($responseBody, $respHeaders, $endpoint, $originMethod, $rawResponse = '') {
-                        $this->rawResponse = $rawResponse;
-            
-                        if ($originMethod != "batch") {
-                            $this->data = json_decode($responseBody, true);
-                        } else {
-                            $this->data = $responseBody;
-                        }
-                        
-                        $this->endpoint = $endpoint;
-                        $this->originMethod = $originMethod;
-            
-                        if (!is_array($respHeaders)) {
-                            $array = explode("\r\n", $respHeaders);
-                        } else {
-                            $array = $respHeaders;
-                        }
-                        foreach ($array as $h) {
-                            $r = explode(": ", $h);
-                            if (count($r) > 1) {
-                                $this->responseHeaders[$r[0]] = $r[1];
+                    public function __construct($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse) {
+                        // Assign class properties
+                        $this->data = (($originMethod == "batch") ? $responseBody : json_decode($responseBody, true));
+                        $responseHeaders = (is_array($responseHeaders) ? $responseHeaders : explode("\r\n", $responseHeaders));
+                        foreach ($responseHeaders as $header) {
+                            $props = explode(": ", $header);
+                            if (count($props) > 1) {
+                                $this->responseHeaders[$props[0]] = $props[1];
                             }
                         }
+                        $this->endpoint = $endpoint;
+                        $this->originMethod = $originMethod;
+                        $this->rawResponse = $rawResponse;
         
         
         
@@ -83,15 +84,20 @@ class Dynamics {
                     
                         $this->DynamicsFormat = new class {
                     
-                            /* CLASS FUNCTIONS - FORMATTING */
+                            /* CLASS FUNCTIONS - HELPERS */
                     
                             /**
-                            * Performs PHP array_filter recursively
-                            *
-                            * @return array
-                            */
+                             * Recursively applies the PHP `array_filter` function to a multi-dimensional array. See original documentation 
+                             * for details.
+                             * 
+                             * @param array     $array      The array to filter
+                             * @param callable  $callback   The callback function to apply to each element. Must return `true` or `false`
+                             * @param int       $mode       (optional) Determines whether to pass array key as argument to filter callback
+                             * 
+                             * @return array
+                             */
                     
-                            private function array_filter_recursive($array, $callback, $mode) {
+                            private function array_filter_recursive($array, $callback, $mode = 0) {
                                 foreach ($array as &$value) {
                                     if (is_array($value)) {
                                         $value = $this->array_filter_recursive($value, $callback, $mode);
@@ -103,26 +109,29 @@ class Dynamics {
                     
                     
                             /**
-                            * Returns true if the passed in key contains annotations. False otherwise.
-                            *
-                            * @return boolean
-                            */
+                             * Checks if the given key is an OData annotation and returns `true` or `false`.
+                             *
+                             * @param string    $key    The string to be checked
+                             * 
+                             * @return bool
+                             */
                             
-                            private function filter_exclude_annotations($key) {
-                                return ((strpos($key, '@OData') == 0) && (strpos($key, '@Microsoft') == 0)); // Use non-strict comparator (required to handle all cases)
+                            private function is_annotation($string) {
+                                // Return whether annotation pattern is in string (non-strict comparator required to handle all cases)
+                                return ((strpos($string, '@OData') == 0) && (strpos($string, '@Microsoft') == 0));
                             }
                     
+                            /* CLASS FUNCTIONS - FORMATTERS */
                     
                             /**
-                             * Takes a key/value pair and returns an array with the results formatted
-                             * into Microsoft EntityMetadata schema. Keys must include annotations
-                             * where relevant.
+                             * Takes a key/value pair and returns an array with the results formatted into Microsoft EntityMetadata schema.
+                             * Keys must include annotations where relevant.
                              * 
-                             * Exceptions include top-level "@odata.X" properties, which are left
-                             * unformatted for use with dedicated functions (e.g. `$this->getNextLink()`)
+                             * Exceptions include top-level "@odata.*" properties, which are left unformatted for use with dedicated functions 
+                             * (e.g. `$this->getNextLink()`).
                              * 
-                             * @param $key       The associative array index to format, including annotation
-                             * @param $value     The value to store in the formatted array
+                             * @param string    $key       The associative array index to format, including annotation
+                             * @param mixed     $value     The value to store in the formatted array
                              * 
                              * @return array
                              */
@@ -156,19 +165,19 @@ class Dynamics {
                     
                                         case 'Microsoft.Dynamics.CRM.totalrecordcount':
                                             return [
-                                                "TotalRecordCount" => $value    // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
+                                                "TotalRecordCount" => $value                // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
                                             ];
                                         break;
                     
                                         case 'Microsoft.Dynamics.CRM.totalrecordcountlimitexceeded':
                                             return [
-                                                "TotalRecordCountLimitExceeded" => $value    // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
+                                                "TotalRecordCountLimitExceeded" => $value   // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
                                             ];
                                         break;
                     
                                         case 'Microsoft.Dynamics.CRM.fetchxmlpagingcookie':
                                             return [
-                                                "FetchXMLPagingCookie" => $value    // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
+                                                "FetchXMLPagingCookie" => $value            // <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
                                             ];
                                         break;
                     
@@ -208,9 +217,10 @@ class Dynamics {
                     
                     
                             /**
-                             * Performs private format_attribute function recursively
+                             * Recursively applies the `format_attribute` function to all key/value pairs of a multi-dimensional array. See 
+                             * original documentation for details.
                              * 
-                             * @param $array     The associative array to format, including annotations
+                             * @param array     $array      The array to format
                              * 
                              * @return array
                              */
@@ -232,10 +242,10 @@ class Dynamics {
                             /* CLASS FUNCTIONS - FORMATS */
                     
                             /**
-                            * Returns response data with all annotations stripped out, leaving only
-                            * basic raw values.
+                            * Basic formatter. Returns response data with all annotations stripped out, leaving only raw values.
                             *
-                            * @param $data - The API response data to format
+                            * @param array  $data   The API response data to format
+                            *
                             * @return array
                             */
                     
@@ -247,16 +257,16 @@ class Dynamics {
                                     return $data;
                                 }
                                 
-                                return $this->array_filter_recursive($data, [$this, "filter_exclude_annotations"], ARRAY_FILTER_USE_KEY);
+                                return $this->array_filter_recursive($data, [$this, "is_annotation"], ARRAY_FILTER_USE_KEY);
                             }
                     
                     
                             /**
-                            * Return response data with all annotations included and all values sorted
-                            * by annotation type (e.g. raw values under "Attributes", logical values
-                            * under "FormattedValues").
+                            * Advanced formatter. Returns response data with all annotations included and all values sorted by annotation type 
+                            * (e.g. raw values under "Attributes", logical values under "FormattedValues").
                             *
-                            * @param $data - The API response data to format
+                            * @param array  $data  The API response data to format
+                            *
                             * @return array
                             */
                     
@@ -301,7 +311,7 @@ class Dynamics {
                             return true;
                         }
                         
-                        if (isset($this->data['error'])) {
+                        if (!is_array($this->data) || isset($this->data['error'])) {
                             return false;
                         } else {
                             return true;
@@ -321,7 +331,7 @@ class Dynamics {
             
             
                     /**
-                    * Get the error array if there was an error. Null otherwise.
+                    * Returns the error array if there was an error. Null otherwise.
                     *
                     * @return array
                     */
@@ -336,7 +346,7 @@ class Dynamics {
             
             
                     /**
-                    * Get the error message if there was an error. Null otherwise.
+                    * Returns the error message if there was an error. Null otherwise.
                     *
                     * @return string
                     */
@@ -352,25 +362,28 @@ class Dynamics {
                     /* CLASS FUNCTIONS - DATA HANDLING */
             
                     /**
-                    * Get the response data of the request as array.
+                    * Returns the response data of the request as an array.
                     *
-                    * @param $format    Enables or disables formatting resulting data
-                    *                   (Optional; default disabled)
+                    * @param boolean    $format     (optional) Enables or disables advanced formatting of response data
+                    *
                     * @return array
                     */
             
                     public function getData($format = false) {
-                        if (!$this->isSuccess()) {
+                        if ($this->isFail()) {
                             return [];
                         }
-            
+                        
+                        // Initialize new response formatter
                         $DynamicsFormat = new $this->DynamicsFormat();
+
+                        // Return response data in the requested format
                         return ($format ? $DynamicsFormat->advanced($this->data) : $DynamicsFormat->basic($this->data));
                     }
             
             
                     /**
-                    * Get original endpoint
+                    * Returns the original endpoint.
                     *
                     * @return string
                     */
@@ -381,7 +394,7 @@ class Dynamics {
             
             
                     /**
-                    * Get the ID of the newly created entity (only when the request type is insert (POST)). Empty string otherwise.
+                    * Returns the ID of the newly created entity (only when the request type is insert (POST)). Empty string otherwise.
                     *
                     * @return string
                     */
@@ -404,7 +417,7 @@ class Dynamics {
             
             
                     /**
-                    * Get the response headers as an array.
+                    * Returns the response headers as an array.
                     *
                     * @return array
                     */
@@ -415,13 +428,13 @@ class Dynamics {
             
             
                     /**
-                    * Get the request nextlink (if any). Empty string otherwise.
+                    * Returns the next page URL if request data exceeded maximum row count. Empty string otherwise.
                     *
                     * @return string
                     */
             
                     public function getNextLink() {
-                        if (!$this->isSuccess()) {
+                        if ($this->isFail()) {
                             return "";
                         }
             
@@ -434,7 +447,7 @@ class Dynamics {
             
             
                     /**
-                    * Get raw response
+                    * Returns raw response.
                     *
                     * @return string
                     */
@@ -445,13 +458,13 @@ class Dynamics {
             
             
                     /**
-                    * Get the request total record count (if any). -1 otherwise.
+                    * Returns the request total record count (if any). -1 otherwise.
                     *
                     * @return int
                     */
             
                     public function getTotalRecordCount() {
-                        if (!$this->isSuccess()) {
+                        if ($this->isFail()) {
                             return -1;
                         }
             
@@ -464,13 +477,13 @@ class Dynamics {
             
             
                     /**
-                    * Get the request total record count (if any). False otherwise.
+                    * Returns whether request data exceeded maximum record count.
                     *
                     * @return boolean
                     */
             
                     public function getTotalRecordCountLimitExceeded() {
-                        if (!$this->isSuccess()) {
+                        if ($this->isFail()) {
                             return false;
                         }
             
@@ -488,12 +501,7 @@ class Dynamics {
             /**
              * Fetches an access token using client credentials.
              *
-             * @return array An associative array containing the result of the token request:
-             *               - success: A boolean indicating if the token request was successful.
-             *               - error: A string representing the error, if any.
-             *               - description: A string describing the error, if any.
-             *               - access_token: The access token obtained from the token request, 
-             *                 or false if unsuccessful.
+             * @return  array
              */
         
             private function fetchToken() {
@@ -541,13 +549,15 @@ class Dynamics {
         
         
             /**
-            * Perform a cURL request to the CRM Web API
+            * Performs a cURL request to the Dynamics Web API.
             *
-            * @param $endpoint - The API endpoint without the API URL
-            * @param $method - The method of the request. Could be 'POST', 'PATCH', 'GET', 'DELETE'
-            * @param $payload - On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
-            * @param $customHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
-            * @param $originMethod - Could be 'insert', 'update', 'delete', 'select', 'execute'
+            * @param string $endpoint       The API endpoint without the API URL
+            * @param string $method         The method of the request. Could be 'POST', 'PATCH', 'GET', 'DELETE'
+            * @param mixed  $payload        On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+            * @param array  $customHeaders  Extra headers from users. Default headers: Authorization, Content-type and Accept
+            * @param string $originMethod   Could be 'insert', 'update', 'delete', 'select', 'execute'
+            *
+            * @return mixed
             */
         
             private function performRequest($endpoint, $method, $payload, $customHeaders, $originMethod) {
@@ -632,6 +642,15 @@ class Dynamics {
             }
         
         
+            /**
+            * Performs a batch of multiple cURL requests to the Dynamics Web API.
+            *
+            * @param mixed  $payload    On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+            * @param string $batchID    A unique identifier for the batch operation (does not need to be a GUID)
+            *
+            * @return mixed
+            */
+        
             public function performBatchRequest($payload, $batchID) {
                 return $this->performRequest('/$batch', 'POST', $payload, [
                     'Content-Type: multipart/mixed;boundary=' . $batchID
@@ -643,8 +662,10 @@ class Dynamics {
             /**
             * Querying entities
             *
-            * @param $endpoint - The API endpoint without the API URL
-            * @param $extraHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
+            * @param string $endpoint       The API endpoint without the API URL
+            * @param mixed  $extraHeaders   Extra headers from users. Default headers: Authorization, Content-type and Accept
+            *
+            * @return mixed
             */
         
             public function select($endpoint = '', $extraHeaders = false) {
@@ -663,8 +684,10 @@ class Dynamics {
             /**
             * Inserting entities
             *
-            * @param $payload - On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
-            * @param $extraHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
+            * @param mixed  $payload        On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+            * @param mixed  $extraHeaders   Extra headers from users. Default headers: Authorization, Content-type and Accept
+            *
+            * @return mixed
             */
         
             public function insert($payload, $extraHeaders = false) {
@@ -675,8 +698,10 @@ class Dynamics {
             /**
             * Updating entities
             *
-            * @param $GUID - The GUID of the entity you want to update
-            * @param $payload - On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+            * @param string $GUID       The GUID of the entity you want to update
+            * @param mixed  $payload    On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+            *
+            * @return mixed
             */
         
             public function update($GUID, $payload, $extraHeaders = false) {
@@ -687,7 +712,9 @@ class Dynamics {
             /**
             * Deleting entities
             *
-            * @param $GUID - The GUID of the entity you want to delete
+            * @param string $GUID  The GUID of the entity you want to delete
+            *
+            * @return mixed
             */
         
             public function delete($GUID, $extraHeaders = false) {
@@ -698,8 +725,10 @@ class Dynamics {
             /**
             * Executing functions
             *
-            * @param $endpoint - The API endpoint without the API URL
-            * @param $extraHeaders - Extra headers from users. Default headers: Authorization, Content-type and Accept
+            * @param string $endpoint       The API endpoint without the API URL
+            * @param mixed  $extraHeaders   Extra headers from users. Default headers: Authorization, Content-type and Accept
+            *
+            * @return mixed
             */
         
             public function execute($endpoint = '', $extraHeaders = false) {
@@ -717,14 +746,33 @@ class Dynamics {
     }
 
     /* CLASS FUNCTIONS - CORE */
+        
+    /**
+    * Passthrough batch of multiple requests to new worker object
+    *
+    * @param mixed  $payload    On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+    * @param string $batchID    A unique identifier for the batch operation (does not need to be a GUID)
+    *
+    * @return object
+    */
 
     public function performBatchRequest($payload, $batchID) {
-        $worker = new $this->DynamicsWorker('contacts', $this->config);
+        $worker = new $this->DynamicsRequest('contacts', $this->config);
         return $worker->performBatchRequest($payload, $batchID);
     }
+    
+        
+    /**
+    * Passthrough undeclared properties to new worker object. Properties will be assumed as Dynamics
+    * entities on which operations are to be performed.
+    *
+    * @param mixed  $prop   The property on which to operate (likely a Dynamics entity logical name)
+    *
+    * @return object
+    */
 
     public function __get($prop) {
-        $worker = new $this->DynamicsWorker($prop, $this->config);
+        $worker = new $this->DynamicsRequest($prop, $this->config);
         return $worker;
     }
 }
