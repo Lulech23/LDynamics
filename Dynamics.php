@@ -118,7 +118,7 @@ class Dynamics {
                             
                             private function is_annotation($string) {
                                 // Return whether annotation pattern is in string (non-strict comparator required to handle all cases)
-                                return ((strpos($string, '@OData') == 0) && (strpos($string, '@Microsoft') == 0));
+                                return ((strpos($string, "@OData") == 0) && (strpos($string, "@Microsoft") == 0));
                             }
                     
                             /* CLASS FUNCTIONS - FORMATTERS */
@@ -137,7 +137,7 @@ class Dynamics {
                              */
                             
                             private function format_attribute($key, $value) {
-                                $annotation = array_filter(explode('@', $key));
+                                $annotation = array_filter(explode("@", $key));
                                 
                                 if (count($annotation) > 1) {
                                     // Annotated attributes
@@ -506,8 +506,8 @@ class Dynamics {
         
             private function fetchToken() {
                 $params = [
-                    'grant_type'    => 'client_credentials',
-                    'scope'         => $this->config['baseUrl'] . '/.default',
+                    'grant_type'    => "client_credentials",
+                    'scope'         => "{$this->config['baseUrl']}/.default",
                     'client_id'     => $this->config['clientID'],
                     'client_secret' => $this->config['clientSecret'],
                 ];
@@ -521,7 +521,8 @@ class Dynamics {
                     CURLOPT_CONNECTTIMEOUT  => 3,
                     CURLOPT_TIMEOUT         => 12,
                     CURLOPT_MAXREDIRS       => 12,
-                    CURLOPT_SSL_VERIFYPEER  => 0
+                    CURLOPT_SSL_VERIFYPEER  => 1,
+                    CURLOPT_ENCODING        => ""
                 ];
                 $curlopts[CURLOPT_POST] = true;
                 $curlopts[CURLOPT_POSTFIELDS] = $params;
@@ -529,8 +530,9 @@ class Dynamics {
         
                 $response = curl_exec($curl);
                 $response = json_decode($response, true);
+                curl_close($curl);
         
-                if(isset($response['error'])) {
+                if (isset($response['error'])) {
                     return [
                         'success'       => false,
                         'error'         => $response['error'],
@@ -571,10 +573,10 @@ class Dynamics {
         
                     if (!preg_match('/^http(s)?\:\/\//', $endpoint)) {
                         if (!preg_match('/^\//', $endpoint)) {
-                            $endpoint = '/' . $endpoint;
+                            $endpoint = "/$endpoint";
                         }
         
-                        $request = $this->config['crmApiEndPoint'] . "api/data/v". $this->config['api'] . $endpoint;
+                        $request = "{$this->config['crmApiEndPoint']}api/data/v{$this->config['api']}$endpoint";
                     } else {
                         $request = $endpoint;
                     }
@@ -586,19 +588,19 @@ class Dynamics {
         
                     if (!$token['success']) {
                         return new $this->DynamicsResponse(json_encode([
-                            'error'     => [
-                                'message'   => '<strong>TOKEN ERROR</strong> (' . $token['error'] . '): ' . $token['description']
+                            'error' => [
+                                'message' => "<strong>TOKEN ERROR</strong> ({$token['error']}): {$token['description']}"
                             ]
                         ]), [], $this->config['tokenEndPoint'], "fetch_token");
                     }
         
                     $requestHeaders = [
-                        'Accept: application/json; charset=utf-8',
-                        'Authorization: Bearer ' . $token['access_token'],
-                        'If-None-Match: null',
-                        'OData-MaxVersion: 4.0',
-                        'OData-Version: 4.0',
-                        'Prefer: respond-async, odata.include-annotations="*"'
+                        "Accept: application/json; charset=utf-8",
+                        "Authorization: Bearer {$token['access_token']}",
+                        "If-None-Match: null",
+                        "OData-MaxVersion: 4.0",
+                        "OData-Version: 4.0",
+                        "Prefer: respond-async, odata.include-annotations=*"
                     ];
         
                     if ($originMethod != "batch") {
@@ -618,6 +620,7 @@ class Dynamics {
                     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
                     curl_setopt($curl, CURLOPT_VERBOSE, 1);
                     curl_setopt($curl, CURLOPT_HEADER, 1);
+                    curl_setopt($curl, CURLOPT_ENCODING, "");
                     
                     if ((!empty($payload)) && in_array($originMethod, ['insert', 'update', 'batch'])) { // In case of insert and update methods
                         if (is_array($payload)) {
@@ -634,6 +637,7 @@ class Dynamics {
                     $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
                     $responseHeaders = substr($response, 0, $headerSize);
                     $responseBody = substr($response, $headerSize);
+                    curl_close($curl);
         
                     return new $this->DynamicsResponse($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse);
                 } catch (\Exception $e) {
@@ -652,9 +656,9 @@ class Dynamics {
             */
         
             public function performBatchRequest($payload, $batchID) {
-                return $this->performRequest('/$batch', 'POST', $payload, [
-                    'Content-Type: multipart/mixed;boundary=' . $batchID
-                ],  'batch');
+                return $this->performRequest("/\$batch", "POST", $payload, [
+                    "Content-Type: multipart/mixed;boundary=$batchID"
+                ], "batch");
             }
             
             /* CLASS FUNCTIONS - QUERY OPERATIONS */
@@ -668,16 +672,16 @@ class Dynamics {
             * @return mixed
             */
         
-            public function select($endpoint = '', $extraHeaders = false) {
+            public function select($endpoint = "", $extraHeaders = false) {
                 if (!preg_match('/^http(s)?\:\/\//', $endpoint)) {
-                    if (strpos($endpoint, '?') !== false) {
-                        $endpoint = '/' . $this->entity . $endpoint;
+                    if (strpos($endpoint, "?") !== false) {
+                        $endpoint = "/{$this->entity}$endpoint";
                     } else {
-                        $endpoint = '/' . $this->entity . '(' . $endpoint . ')';
+                        $endpoint = "/{$this->entity}($endpoint)";
                     }
                 }
                 
-                return $this->performRequest($endpoint, 'GET', false, $extraHeaders, "select");
+                return $this->performRequest($endpoint, "GET", false, $extraHeaders, "select");
             }
         
         
@@ -691,7 +695,7 @@ class Dynamics {
             */
         
             public function insert($payload, $extraHeaders = false) {
-                return $this->performRequest('/' . $this->entity, 'POST', $payload, $extraHeaders, "insert");
+                return $this->performRequest("/{$this->entity}", "POST", $payload, $extraHeaders, "insert");
             }
         
         
@@ -705,7 +709,7 @@ class Dynamics {
             */
         
             public function update($GUID, $payload, $extraHeaders = false) {
-                return $this->performRequest('/' . $this->entity . '(' . $GUID . ')', 'PATCH', $payload, $extraHeaders, "update");
+                return $this->performRequest("/{$this->entity}($GUID)", "PATCH", $payload, $extraHeaders, "update");
             }
         
         
@@ -718,7 +722,7 @@ class Dynamics {
             */
         
             public function delete($GUID, $extraHeaders = false) {
-                return $this->performRequest('/' . $this->entity . '(' . $GUID . ')', 'DELETE', false, $extraHeaders, "delete");
+                return $this->performRequest("/{$this->entity}($GUID)", "DELETE", false, $extraHeaders, "delete");
             }
         
         
@@ -731,16 +735,16 @@ class Dynamics {
             * @return mixed
             */
         
-            public function execute($endpoint = '', $extraHeaders = false) {
+            public function execute($endpoint = "", $extraHeaders = false) {
                 if (!preg_match('/^http(s)?\:\/\//', $endpoint)) {
-                    if (strpos($endpoint, '(') !== false) {
-                        $endpoint = '/' . $this->entity . $endpoint;
+                    if (strpos($endpoint, "(") !== false) {
+                        $endpoint = "/{$this->entity}$endpoint";
                     } else {
-                        $endpoint = '/' . $this->entity . '(' . $endpoint . ')';
+                        $endpoint = "/{$this->entity}($endpoint)";
                     }
                 }
                 
-                return $this->performRequest($endpoint, 'GET', false, $extraHeaders, "execute");
+                return $this->performRequest($endpoint, "GET", false, $extraHeaders, "execute");
             }
         };
     }
@@ -757,7 +761,7 @@ class Dynamics {
     */
 
     public function performBatchRequest($payload, $batchID) {
-        $worker = new $this->DynamicsRequest('contacts', $this->config);
+        $worker = new $this->DynamicsRequest("contacts", $this->config);
         return $worker->performBatchRequest($payload, $batchID);
     }
     
