@@ -311,6 +311,12 @@ class Dynamics {
                             return true;
                         }
                         
+                        if (($this->originMethod == "insert") || ($this->originMethod == "update")) {
+                            if (is_null($this->data)) {
+                                return true;
+                            }
+                        }
+                        
                         if (!is_array($this->data) || isset($this->data['error'])) {
                             return false;
                         } else {
