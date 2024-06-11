@@ -281,6 +281,14 @@ class Dynamics {
                                     foreach ($data['value'] as $r => $result) {
                                         $formatted_data = [];
                                         foreach($result as $key => $value) {
+                                            /* Format FetchXML <link-entity> attributes     <-- Needs research on official behavior
+                                            if (str_contains($key, ".") && !str_contains($key, "@")) {
+                                                $key = explode(".", $key, 2);
+                                                $value = ["{$key[1]}" => $value];
+                                                $key = $key[0];
+                                            }*/
+
+                                            // Format values
                                             if (!is_array($value)) {
                                                 $formatted_data = array_merge_recursive($formatted_data, $this->format_attribute($key, $value));
                                             } else {
