@@ -50,19 +50,20 @@ class Dynamics {
                 CLASS: RESPONSE
                 */
             
-                $this->DynamicsResponse = new class($responseBody = "", $responseHeaders = [], $endpoint = "", $originMethod = "", $rawResponse = "") {
+                $this->DynamicsResponse = new class($responseBody = "", $responseHeaders = [], $endpoint = "", $originMethod = "", $rawResponse = "", $responseCode = 418) {
                     // Initialize class properties
                     private $data = [];
                     private $responseHeaders;
                     private $endpoint;
                     private $originMethod;
                     private $rawResponse;
+                    private $responseCode;
 
                     // Initialize inner classes
                     private $DynamicsFormat;
             
                     // Initialize class constructor
-                    public function __construct($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse) {
+                    public function __construct($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse, $responseCode) {
                         // Assign class properties
                         $this->data = (($originMethod == "batch") ? $responseBody : json_decode($responseBody, true));
                         $responseHeaders = (is_array($responseHeaders) ? $responseHeaders : explode("\r\n", $responseHeaders));
@@ -75,6 +76,7 @@ class Dynamics {
                         $this->endpoint = $endpoint;
                         $this->originMethod = $originMethod;
                         $this->rawResponse = $rawResponse;
+                        $this->responseCode = $responseCode;
         
         
         
@@ -319,13 +321,7 @@ class Dynamics {
                             return true;
                         }
                         
-                        if (($this->originMethod == "insert") || ($this->originMethod == "update")) {
-                            if (is_null($this->data)) {
-                                return true;
-                            }
-                        }
-                        
-                        if (!is_array($this->data) || isset($this->data['error'])) {
+                        if (isset($this->data['error']) || (isset($this->responseCode) && ($this->responseCode >= 400))) {
                             return false;
                         } else {
                             return true;
@@ -457,6 +453,17 @@ class Dynamics {
                         }
             
                         return $this->data['@odata.nextLink'];
+                    }
+            
+            
+                    /**
+                    * Returns response code.
+                    *
+                    * @return int
+                    */
+            
+                    public function getResponseCode() {
+                        return $this->responseCode;
                     }
             
             
@@ -605,7 +612,7 @@ class Dynamics {
                             'error' => [
                                 'message' => "<strong>TOKEN ERROR</strong> ({$token['error']}): {$token['description']}"
                             ]
-                        ]), [], $this->config['tokenEndPoint'], "fetch_token");
+                        ]), [], 400, $this->config['tokenEndPoint'], "fetch_token");
                     }
         
                     $requestHeaders = [
@@ -646,6 +653,7 @@ class Dynamics {
         
                     $response = curl_exec($curl);
                     $rawResponse = $response;
+                    $responseCode = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
         
                     // Get response headers
                     $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
@@ -653,7 +661,7 @@ class Dynamics {
                     $responseBody = substr($response, $headerSize);
                     curl_close($curl);
         
-                    return new $this->DynamicsResponse($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse);
+                    return new $this->DynamicsResponse($responseBody, $responseHeaders, $endpoint, $originMethod, $rawResponse, $responseCode);
                 } catch (\Exception $e) {
                     return false;
                 }
