@@ -1,3 +1,3 @@
 <?php
 
-include 'Dynamics.php';
+include 'dynamics.php';
