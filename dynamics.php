@@ -1,16 +1,16 @@
 <?php 
 
 /********************************************************
- *														*
- * PHP D365 Lightweight API Wrapper						*
- * by Lulech23											*
- * 														*
+ *							*
+ * PHP D365 Lightweight API Wrapper			*
+ * by Lulech23						*
+ * 							*
  ******************************************************** 
- *														*
- * Repository: https://github.com/Lulech23/PHP-D365		*
+ *							*
+ * Repository: https://github.com/Lulech23/PHP-D365	*
  *  - Forked From: https://github.com/RobbeR/RDynamics	*
- * Version: v2.6.1										*
- *														*
+ * Version: v2.6.1					*
+ *							*
  ********************************************************/
 
 /* 
@@ -20,12 +20,12 @@ CLASS: DYNAMICS
 class Dynamics {
 	// Initialize class properties
 	private $config = [
-		'api'				=> "",
-		'baseUrl'			=> "",
+		'api'			=> "",
+		'baseUrl'		=> "",
 		'authEndPoint'		=> "",
 		'tokenEndPoint'		=> "",
 		'crmApiEndPoint'	=> "",
-		'clientID'			=> "",
+		'clientID'		=> "",
 		'clientSecret'		=> ""
 	];
 
@@ -106,7 +106,7 @@ class Dynamics {
 							 * for details.
 							 * 
 							 * @param array		$array		The array to filter
-							 * @param callable  $callback	The callback function to apply to each element. Must return `true` or `false`
+							 * @param callable	$callback	The callback function to apply to each element. Must return `true` or `false`
 							 * @param int		$mode		(optional) Determines whether to pass array key as argument to filter callback
 							 * 
 							 * @return array
@@ -180,7 +180,7 @@ class Dynamics {
 					
 										case 'Microsoft.Dynamics.CRM.totalrecordcount':
 											return [
-												"TotalRecordCount" => $value				// <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
+												"TotalRecordCount" => $value			// <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
 											];
 										break;
 					
@@ -192,7 +192,7 @@ class Dynamics {
 					
 										case 'Microsoft.Dynamics.CRM.fetchxmlpagingcookie':
 											return [
-												"FetchXMLPagingCookie" => $value			// <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
+												"FetchXMLPagingCookie" => $value		// <-- Need to identify schema name (only applies to FetchXML - break out to different parser?)
 											];
 										break;
 					
@@ -259,7 +259,7 @@ class Dynamics {
 							/**
 							* Basic formatter. Returns response data with all annotations stripped out, leaving only raw values.
 							*
-							* @param array  $data   The API response data to format
+							* @param array	$data   The API response data to format
 							*
 							* @return array
 							*/
@@ -548,22 +548,22 @@ class Dynamics {
 			private function fetchToken() {
 				$params = [
 					'grant_type'	=> "client_credentials",
-					'scope'			=> "{$this->config['baseUrl']}/.default",
-					'client_id'		=> $this->config['clientID'],
+					'scope'		=> "{$this->config['baseUrl']}/.default",
+					'client_id'	=> $this->config['clientID'],
 					'client_secret'	=> $this->config['clientSecret'],
 				];
 		
 				$curl = curl_init();
 				$curlopts = [
-					CURLOPT_URL				=> $this->config['tokenEndPoint'],
-					CURLOPT_HEADER			=> false,
+					CURLOPT_URL		=> $this->config['tokenEndPoint'],
+					CURLOPT_HEADER		=> false,
 					CURLOPT_RETURNTRANSFER	=> true,
 					CURLOPT_FOLLOWLOCATION	=> true,
 					CURLOPT_CONNECTTIMEOUT	=> 3,
-					CURLOPT_TIMEOUT			=> 12,
-					CURLOPT_MAXREDIRS		=> 12,
+					CURLOPT_TIMEOUT		=> 12,
+					CURLOPT_MAXREDIRS	=> 12,
 					CURLOPT_SSL_VERIFYPEER	=> 1,
-					CURLOPT_ENCODING		=> ""
+					CURLOPT_ENCODING	=> ""
 				];
 				$curlopts[CURLOPT_POST] = true;
 				$curlopts[CURLOPT_POSTFIELDS] = $params;
@@ -575,16 +575,16 @@ class Dynamics {
 		
 				if (isset($response['error'])) {
 					return [
-						'success'		=> false,
-						'error'			=> $response['error'],
+						'success'	=> false,
+						'error'		=> $response['error'],
 						'description'	=> $response['error_description'],
 						'access_token'	=> false
 					];
 				}
 		
 				return [
-					'success'		=> true,
-					'error'			=> false,
+					'success'	=> true,
+					'error'		=> false,
 					'description'	=> false,
 					'access_token'	=> $response['access_token']
 				];
@@ -708,7 +708,7 @@ class Dynamics {
 			/**
 			* Querying entities
 			*
-			* @param string	$endpoint		The API endpoint without the API URL
+			* @param string	$endpoint	The API endpoint without the API URL
 			* @param mixed	$extraHeaders	Extra headers from users. Default headers: Authorization, Content-type and Accept
 			*
 			* @return mixed
@@ -730,7 +730,7 @@ class Dynamics {
 			/**
 			* Inserting entities
 			*
-			* @param mixed	$payload		On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
+			* @param mixed	$payload	On Insert/Update requests (POST/PATCH) the array of the fields to insert/update
 			* @param mixed	$extraHeaders	Extra headers from users. Default headers: Authorization, Content-type and Accept
 			*
 			* @return mixed
@@ -771,7 +771,7 @@ class Dynamics {
 			/**
 			* Executing functions
 			*
-			* @param string	$endpoint		The API endpoint without the API URL
+			* @param string	$endpoint	The API endpoint without the API URL
 			* @param mixed	$extraHeaders	Extra headers from users. Default headers: Authorization, Content-type and Accept
 			*
 			* @return mixed
